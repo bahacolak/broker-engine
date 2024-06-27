@@ -102,27 +102,21 @@ public class UserService {
     }
 
     public UserDto updateUser(Long id, UpdateUserRequest request) {
-        Optional<User> existingUserOptional = userRepository.findById(id);
+        User existingUser = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + id));
 
-        if (existingUserOptional.isPresent()) {
-            User existingUser = existingUserOptional.get();
+        existingUser.setFirstName(request.getFirstName());
+        existingUser.setLastName(request.getLastName());
+        existingUser.setEmail(request.getEmail());
 
-            existingUser.setFirstName(request.getFirstName());
-            existingUser.setLastName(request.getLastName());
-            existingUser.setEmail(request.getEmail());
+        userRepository.save(existingUser);
 
-            existingUser = userRepository.save(existingUser);
-
-            UserDto updatedUserDto = new UserDto();
-            updatedUserDto.setId(existingUser.getId());
-            updatedUserDto.setFirstName(existingUser.getFirstName());
-            updatedUserDto.setLastName(existingUser.getLastName());
-            updatedUserDto.setEmail(existingUser.getEmail());
-
-            return updatedUserDto;
-        } else {
-            throw new UserNotFoundException("User not found with id: " + id);
-        }
+        return new UserDto(
+                existingUser.getId(),
+                existingUser.getFirstName(),
+                existingUser.getLastName(),
+                existingUser.getEmail()
+        );
     }
 
     public void deleteUser(Long id) {
