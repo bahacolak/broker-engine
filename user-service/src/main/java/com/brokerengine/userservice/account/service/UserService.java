@@ -43,7 +43,6 @@ public class UserService {
             userDto.setId(user.getId());
             userDto.setFirstName(user.getFirstName());
             userDto.setLastName(user.getLastName());
-            userDto.setPassword(user.getPassword());
             userDto.setEmail(user.getEmail());
             userDtoList.add(userDto);
         }
@@ -54,16 +53,13 @@ public class UserService {
         return userRepository.findById(id)
                 .map(user -> new UserDto(
                         user.getId(),
-                        user.getPassword(),
                         user.getEmail(),
                         user.getFirstName(),
                         user.getLastName()))
                 .orElseThrow(() -> new UserNotFoundException("User not found with id: " + id));
     }
 
-
     public AuthenticationResponse register(RegisterRequest request) {
-
         if (doesUserExist(request.getEmail())) {
             throw new UserConflictException("User with email: " + request.getEmail() + " already exists!");
         }
@@ -87,8 +83,7 @@ public class UserService {
     }
 
     public AuthenticationResponse login(AuthenticationRequest request) {
-        var updatedEmail = request.getEmail();
-        var user = userRepository.findByEmail(updatedEmail)
+        var user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new BadCredentialsException("Invalid email"));
 
         var passwordEncoder = new BCryptPasswordEncoder();
@@ -109,7 +104,7 @@ public class UserService {
     public UserDto updateUser(Long id, UpdateUserRequest request) {
         Optional<User> existingUserOptional = userRepository.findById(id);
 
-        if (existingUserOptional.isPresent()){
+        if (existingUserOptional.isPresent()) {
             User existingUser = existingUserOptional.get();
 
             existingUser.setFirstName(request.getFirstName());
@@ -119,7 +114,6 @@ public class UserService {
             existingUser = userRepository.save(existingUser);
 
             UserDto updatedUserDto = new UserDto();
-
             updatedUserDto.setId(existingUser.getId());
             updatedUserDto.setFirstName(existingUser.getFirstName());
             updatedUserDto.setLastName(existingUser.getLastName());
@@ -132,11 +126,10 @@ public class UserService {
     }
 
     public void deleteUser(Long id) {
-        Optional<User> optionalUser = userRepository.findById(id);
-        if (optionalUser.isPresent()) {
-            userRepository.deleteById(id);
-        } else {
+        if (!userRepository.existsById(id)) {
             throw new UserNotFoundException("User not found with id: " + id);
         }
+        userRepository.deleteById(id);
     }
 }
+
