@@ -8,7 +8,10 @@ import com.brokerengine.userservice.account.entity.User;
 import com.brokerengine.userservice.account.repository.UserRepository;
 import com.brokerengine.userservice.account.web.advice.exception.UserConflictException;
 import com.brokerengine.userservice.account.web.advice.exception.UserNotFoundException;
+import com.brokerengine.userservice.account.web.advice.exception.WalletCreationException;
+import com.brokerengine.userservice.account.web.dto.CreateWalletRequestDto;
 import com.brokerengine.userservice.account.web.dto.UserDto;
+import com.brokerengine.userservice.account.web.dto.WalletDto;
 import com.brokerengine.userservice.account.web.request.AuthenticationRequest;
 import com.brokerengine.userservice.account.web.request.RegisterRequest;
 import com.brokerengine.userservice.account.web.request.UpdateUserRequest;
@@ -16,10 +19,10 @@ import com.brokerengine.userservice.account.web.response.AuthenticationResponse;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class UserService {
@@ -27,11 +30,13 @@ public class UserService {
     private final UserRepository userRepository;
     private final JwtService jwtService;
     private final PasswordEncoderService passwordEncoderService;
+    private final BrokerService brokerService;
 
-    public UserService(UserRepository userRepository, JwtService jwtService, PasswordEncoderService passwordEncoderService) {
+    public UserService(UserRepository userRepository, JwtService jwtService, PasswordEncoderService passwordEncoderService, BrokerService brokerService) {
         this.userRepository = userRepository;
         this.jwtService = jwtService;
         this.passwordEncoderService = passwordEncoderService;
+        this.brokerService = brokerService;
     }
 
     public List<UserDto> getAllUsers() {
@@ -59,6 +64,7 @@ public class UserService {
                 .orElseThrow(() -> new UserNotFoundException("User not found with id: " + id));
     }
 
+    @Transactional
     public AuthenticationResponse register(RegisterRequest request) {
         if (doesUserExist(request.getEmail())) {
             throw new UserConflictException("User with email: " + request.getEmail() + " already exists!");
@@ -76,6 +82,14 @@ public class UserService {
                 .role(Role.USER)
                 .build();
         userRepository.save(user);
+
+        CreateWalletRequestDto walletRequest = new CreateWalletRequestDto(user.getId().toString());
+        WalletDto wallet = brokerService.createWallet(walletRequest);
+
+        if (wallet == null) {
+            throw new WalletCreationException("Failed to create wallet for user with email: " + request.getEmail());
+        }
+
         var jwtToken = jwtService.generateToken(user);
         return AuthenticationResponse.builder()
                 .token(jwtToken)
