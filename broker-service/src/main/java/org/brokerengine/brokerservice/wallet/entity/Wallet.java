@@ -1,17 +1,12 @@
 package org.brokerengine.brokerservice.wallet.entity;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
 
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
 public class Wallet {
-
     @Id
     private Long id;
     private String userId;
@@ -20,4 +15,11 @@ public class Wallet {
     private Double balance;
     private Double balanceOnHold;
 
+    public Wallet(String userId, Integer stockCount, Integer stockCountOnHold, Double balance, Double balanceOnHold) {
+        this.userId = userId;
+        this.stockCount = stockCount;
+        this.stockCountOnHold = stockCountOnHold;
+        this. balance = balance;
+        this.balanceOnHold = balanceOnHold;
+    }
 }

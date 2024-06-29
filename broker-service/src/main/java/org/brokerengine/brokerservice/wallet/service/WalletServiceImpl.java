@@ -9,8 +9,8 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 @Service
-public class WalletServiceImpl {
-    private final WalletRepository walletRepository;
+public class WalletServiceImpl implements WalletService {
+    WalletRepository walletRepository;
 
     public WalletServiceImpl(WalletRepository walletRepository) {
         this.walletRepository = walletRepository;
@@ -25,7 +25,7 @@ public class WalletServiceImpl {
     public Mono<Wallet> deposit(DepositRequest depositRequest) {
         String userId = depositRequest.getUserId();
         return walletRepository.findByUserId(userId)
-                .switchIfEmpty(Mono.error((new WalletNotFoundException())))
+                .switchIfEmpty(Mono.error(new WalletNotFoundException()))
                 .flatMap(w -> {
                     w.setBalance(w.getBalance() + depositRequest.getAmount());
                     return walletRepository.save(w);
