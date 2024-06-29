@@ -1,0 +1,29 @@
+version: "3.9"
+services:
+  rabbitmq:
+    image: rabbitmq:3.8-management-alpine
+    container_name: 'rabbitmq'
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+      - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
+  stock-service:
+    build: stock-service
+  eureka-server:
+    build: eureka-server
+    ports:
+      - "1001:1001"
+  api-gateway:
+    build: api-gateway
+    ports:
+      - "1000:1000"
+  broker-service:
+    build: broker-service
+    ports:
+      - "1003:1003"
+  user-service:
+    build: user-service
+    ports:
+      - "1002:1002"
